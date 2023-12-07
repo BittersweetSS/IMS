@@ -1,8 +1,35 @@
 #include "simlib.h"
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 using namespace std;
+
+class termostat: Condition{
+private:
+    double ON_temperature;
+    double OFF_temperature;
+    Variable target_temperature;
+public:
+    Variable output;
+    termostat(double on, double off, Integrator temperature_sensor):
+        ON_temperature(on),
+        OFF_temperature(off),
+        target_temperature(on),
+        output(0),
+        Condition(target_temperature - temperature_sensor)
+        {};
+    void Action(){
+        if(Up()){
+            output = 1.0;
+            target_temperature = OFF_temperature;
+        }else{
+            output = 0.0;
+            target_temperature = OFF_temperature;
+        }
+    }
+    ~termostat();
+};
 
 class cell{
 private:
@@ -15,7 +42,6 @@ public:
     ~cell();
 };
 
-cell::~cell(){}
 
 #define X_SIZE 16
 #define Y_SIZE 16
