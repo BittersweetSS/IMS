@@ -70,12 +70,16 @@ int main(int argc, char const *argv[])
     for (size_t x = 0, y = 0, z = 0;;)
     {
         cell *current = room[x][y][z];
-
-        current->temperature.SetInput(
-            heat_transef_equastion(current->temperature, x != 0 ? room[x-1][y][z]->temperature : current->temperature) +
-            heat_transef_equastion(current->temperature, x != X_SIZE - 1 ? room[x+1][y][z]->temperature : current->temperature) +
-            heat_transef_equastion(current->temperature, y != 0 ? room[x][y-1][z]->temperature : current->temperature) +
-            heat_transef_equastion(current->temperature, y != Y_SIZE - 1 ? room[x][y+1][z]->temperature : current->temperature) - 0.0);
+        Input equation = 0.0 * current->temperature;
+        if(x != 0)
+            equation = equation + heat_transef_equastion(current->temperature, room[x-1][y][z]->temperature);
+        if(x != X_SIZE - 1)
+            equation = equation + heat_transef_equastion(current->temperature, room[x+1][y][z]->temperature);
+        if(y != 0)
+            equation = equation + heat_transef_equastion(current->temperature, room[x][y-1][z]->temperature);
+        if(y != Y_SIZE - 1)
+            equation = equation + heat_transef_equastion(current->temperature, room[x][y+1][z]->temperature);
+        current->temperature.SetInput(equation);
 
         current->temperature.Init(21.0 + double(x) / X_SIZE - double(y) /Y_SIZE + double(z) / Z_SIZE);
         current->Out();
