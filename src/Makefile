@@ -1,2 +1,7 @@
-build:
-g++ -l simlib main.cpp
+build: simulation
+
+simulation: main.cpp
+	g++ -l simlib main.cpp -o simulation
+
+run: build
+	./simulation
