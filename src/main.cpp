@@ -48,17 +48,36 @@ void Sample(){
     }
 }
 
-Sampler S(Sample,0.1);
+Sampler S(Sample,10);
+
+#define heat_transef_equastion(T1, T2) (-0.1 * ((T1) - (T2)))
 
 int main(int argc, char const *argv[])
 {
     for (size_t x = 0, y = 0, z = 0;;)
     {
         room[x][y][z] = new cell;
+
+        if (++x >= X_SIZE)
+            x = 0;
+        else continue;
+        if (++y >= Y_SIZE)
+            y = 0;
+        else continue;
+        if (++z >= Z_SIZE)
+            break;
+    }
+    for (size_t x = 0, y = 0, z = 0;;)
+    {
         cell *current = room[x][y][z];
 
-        current->temperature.SetInput(7.0);
-        current->temperature.Init(21.0);
+        current->temperature.SetInput(
+            heat_transef_equastion(current->temperature, x != 0 ? room[x-1][y][z]->temperature : current->temperature) +
+            heat_transef_equastion(current->temperature, x != X_SIZE - 1 ? room[x+1][y][z]->temperature : current->temperature) +
+            heat_transef_equastion(current->temperature, y != 0 ? room[x][y-1][z]->temperature : current->temperature) +
+            heat_transef_equastion(current->temperature, y != Y_SIZE - 1 ? room[x][y+1][z]->temperature : current->temperature) - 0.0);
+
+        current->temperature.Init(21.0 + double(x) / X_SIZE - double(y) /Y_SIZE + double(z) / Z_SIZE);
         current->Out();
 
         if(x == X_SIZE - 1)
@@ -76,7 +95,7 @@ int main(int argc, char const *argv[])
             break;
     }
     
-    Init(0, 1.00001);
+    Init(0, 100.00001);
     SetStep(1e-10,0.5);
     Run();
     return 0;
