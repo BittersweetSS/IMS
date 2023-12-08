@@ -1,7 +1,9 @@
 build: simulation
 
 simulation: main.cpp
-	g++ -l simlib main.cpp -o simulation
+	g++ -g main.cpp -o simulation -l simlib
 
 run: build
 	./simulation
+clean:
+	rm -rf simulation
