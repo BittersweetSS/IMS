@@ -14,12 +14,11 @@ public:
     termostat(double on, double off, Input temperature_sensor):
         ON_temperature(on),
         OFF_temperature(off),
-        target_temperature(on),
-        output(0),
+        target_temperature(off),
+        output(1),
         Condition(target_temperature - temperature_sensor)
         {};
     void Action(){
-        printf("Event");
         if(Up()){
             output = 1.0;
             target_temperature = OFF_temperature;
@@ -30,11 +29,12 @@ public:
     }
 };
 
-const double Mass = 80;           // in kg
+const double Mass = 20;           // in kg
 const double SpecificHeatCapacity = 4186.0; // in J/(kg·°C) water
 const double HeatLossCoefficient = 0.004;
-const double RadiatorPower = 1500; // in W
+const double RadiatorPower = 2000; // in W
 const double initialTemperature = 14.7; // in C
+
 
 class Radiator : public aContiBlock {
     private:
@@ -138,7 +138,7 @@ int main(int argc, char const *argv[])
         if (++z >= Z_SIZE)
             break;
     }
-    thermostat = new termostat(25.,18.,room[0][7][0]->temperature.Value());
+    thermostat = new termostat(14.,14.5,room[0][7][0]->temperature.Value());
     for (size_t x = 0, y = 0, z = 0;;)
     {
         cell *current = room[x][y][z];
@@ -153,19 +153,24 @@ int main(int argc, char const *argv[])
         if(y != Y_SIZE - 1)
             equation = equation + heat_transfer_equation(current->temperature, room[x][y+1][z]->temperature);
         if (x == 0 || x == X_SIZE - 1 || y == 0 || y == Y_SIZE - 1) {
-                Input rimHeatTransfer = heat_transfer_equation(current->temperature, 1t0.);
+                Input rimHeatTransfer = heat_transfer_equation(current->temperature, 10.);
                 equation = equation + HeatLossCoefficient * rimHeatTransfer;
             }
+
+        if (x == 1 && y == 7 && z == 0){
+            thermostat->SetInput(current->temperature.Value());
+            thermostat->Action();
+
+        }
 
         if (x == 15 && y == 6 && z == 0) {
             current->radiator->heaterPower.Set(RadiatorPower);
             current->radiator->outsideTemperature.Set(equation);
             current->radiator->temperature.Init(initialTemperature);
 
-            current->temperature.SetInput( thermostat->output * HeatLossCoefficient * current->radiator->temperature.Value());
+            current->temperature.SetInput( thermostat->output.Value() * HeatLossCoefficient * current->radiator->temperature.Value());
             current->temperature.Init(current->radiator->temperature.Value());
         } else {
-            
             current->temperature.SetInput(equation);
             current->temperature.Init(initialTemperature);
         }
