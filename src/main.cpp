@@ -4,41 +4,37 @@
 #include <vector>
 using namespace std;
 
-class Thermostat: Condition{
+class termostat: public Condition{
 private:
     double ON_temperature;
     double OFF_temperature;
     Variable target_temperature;
 public:
-    Input temperature_sensor;
     Variable output;
-    Thermostat(double on, double off, Input temperature_sensor):
+    termostat(double on, double off, Input temperature_sensor):
         ON_temperature(on),
         OFF_temperature(off),
         target_temperature(on),
-        temperature_sensor(temperature_sensor),
         output(1),
         Condition(target_temperature - temperature_sensor)
         {};
     void Action(){
-        cout << "Entering Thermostat::Action()" << endl;
-
+        printf("Event");
         if(Up()){
-                output = 1.0;
-                target_temperature = ON_temperature;
-            }else{
-                output = 0.0;
-                target_temperature = OFF_temperature;
-            }
-            printf("Thermostat: %-1.1f\n", output.Value());
-
-        cout << "Exiting Thermostat::Action()" << endl;
+            output = 1.0;
+            target_temperature = ON_temperature;
+        }else{
+            output = 0.0;
+            target_temperature = OFF_temperature;
+        }
     }
 };
 
-const double Mass = 20;           // in kg
+const double Mass = 80;           // in kg
 const double SpecificHeatCapacity = 4186.0; // in J/(kg·°C) water
 const double HeatLossCoefficient = 0.004;
+const double RadiatorPower = 1500; // in W
+const double initialTemperature = 21; // in C
 
 class Radiator : public aContiBlock {
     private:
@@ -92,6 +88,7 @@ public:
 
 // needs to be stored on heap because it doesn't work if its just array
 cell *room[X_SIZE][Y_SIZE][Z_SIZE];
+termostat *thermostat;
 
 void Sample(){
     printf("######################## %-9.3f ########################\n", T.Value());
@@ -139,7 +136,7 @@ int main(int argc, char const *argv[])
         if (++z >= Z_SIZE)
             break;
     }
-
+    thermostat = new termostat(25.,18.,room[0][7][0]->temperature.Value());
     for (size_t x = 0, y = 0, z = 0;;)
     {
         cell *current = room[x][y][z];
@@ -154,23 +151,22 @@ int main(int argc, char const *argv[])
         if(y != Y_SIZE - 1)
             equation = equation + heat_transfer_equation(current->temperature, room[x][y+1][z]->temperature);
         if (x == 0 || x == X_SIZE - 1 || y == 0 || y == Y_SIZE - 1) {
-                Input rimHeatTransfer = heat_transfer_equation(current->temperature, -18);
-                equation = equation + 0.0042 * rimHeatTransfer;
+                Input rimHeatTransfer = heat_transfer_equation(current->temperature, 0.);
+                equation = equation + HeatLossCoefficient * rimHeatTransfer;
             }
-        if (x == 15 && y == 6 && z == 0) {
-            current->radiator->heaterPower.Set(1500);
-            current->radiator->outsideTemperature.Set(equation);
-            current->radiator->temperature.Init(21.0);
 
-            current->temperature.SetInput( 0.0042 * current->radiator->temperature.Value());
+        if (x == 15 && y == 6 && z == 0) {
+            current->radiator->heaterPower.Set(RadiatorPower);
+            current->radiator->outsideTemperature.Set(equation);
+            current->radiator->temperature.Init(initialTemperature);
+
+            current->temperature.SetInput( thermostat->output * HeatLossCoefficient * current->radiator->temperature.Value());
             current->temperature.Init(current->radiator->temperature.Value());
         } else {
-           
+            
             current->temperature.SetInput(equation);
-            current->temperature.Init(21.0 + double(x) / X_SIZE - double(y) / Y_SIZE + double(z) / Z_SIZE);
+            current->temperature.Init(initialTemperature + double(x) / X_SIZE - double(y) / Y_SIZE + double(z) / Z_SIZE);
         }
-
-        
 
         current->Out();
 
@@ -188,13 +184,8 @@ int main(int argc, char const *argv[])
         if (++z >= Z_SIZE)
             break;
     }
-
-    
-    
-    
    
-   // DebugON();
-    Init(0.,400);
+    Init(0.);
     SetStep(1e-10,0.5);
     Run();
     return 0;
