@@ -34,7 +34,7 @@ const double Mass = 80;           // in kg
 const double SpecificHeatCapacity = 4186.0; // in J/(kg·°C) water
 const double HeatLossCoefficient = 0.004;
 const double RadiatorPower = 1500; // in W
-const double initialTemperature = 21; // in C
+const double initialTemperature = 14.7; // in C
 
 class Radiator : public aContiBlock {
     private:
@@ -115,8 +115,10 @@ void Sample(){
     printf("\n");
 }
 
-Sampler S(Sample,10);
-#define heat_transfer_equation(T1, T2) (-0.1 * ((T1) - (T2)))
+Sampler S(Sample, 0.25);
+#define SIM_TIME 360 // sec --> hours
+#define AIR_2_AIR_HT_C (1.2 * 28. / 1. * 0.48 * 1.3) * SIM_TIME
+#define heat_transfer_equation(T1, T2) (AIR_2_AIR_HT_C * ((T2) - (T1)))
 
 int main(int argc, char const *argv[])
 {  
@@ -165,7 +167,7 @@ int main(int argc, char const *argv[])
         } else {
             
             current->temperature.SetInput(equation);
-            current->temperature.Init(initialTemperature + double(x) / X_SIZE - double(y) / Y_SIZE + double(z) / Z_SIZE);
+            current->temperature.Init(initialTemperature);
         }
 
         current->Out();
@@ -185,7 +187,7 @@ int main(int argc, char const *argv[])
             break;
     }
    
-    Init(0.);
+    Init(0.,24);
     SetStep(1e-10,0.5);
     Run();
     return 0;
