@@ -15,17 +15,17 @@ public:
         ON_temperature(on),
         OFF_temperature(off),
         target_temperature(on),
-        output(1),
+        output(0),
         Condition(target_temperature - temperature_sensor)
         {};
     void Action(){
         printf("Event");
         if(Up()){
             output = 1.0;
-            target_temperature = ON_temperature;
+            target_temperature = OFF_temperature;
         }else{
             output = 0.0;
-            target_temperature = OFF_temperature;
+            target_temperature = ON_temperature;
         }
     }
 };
@@ -153,7 +153,7 @@ int main(int argc, char const *argv[])
         if(y != Y_SIZE - 1)
             equation = equation + heat_transfer_equation(current->temperature, room[x][y+1][z]->temperature);
         if (x == 0 || x == X_SIZE - 1 || y == 0 || y == Y_SIZE - 1) {
-                Input rimHeatTransfer = heat_transfer_equation(current->temperature, 10.);
+                Input rimHeatTransfer = heat_transfer_equation(current->temperature, 1t0.);
                 equation = equation + HeatLossCoefficient * rimHeatTransfer;
             }
 
