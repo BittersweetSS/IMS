@@ -153,7 +153,7 @@ int main(int argc, char const *argv[])
         if(y != Y_SIZE - 1)
             equation = equation + heat_transfer_equation(current->temperature, room[x][y+1][z]->temperature);
         if (x == 0 || x == X_SIZE - 1 || y == 0 || y == Y_SIZE - 1) {
-                Input rimHeatTransfer = heat_transfer_equation(current->temperature, 0.);
+                Input rimHeatTransfer = heat_transfer_equation(current->temperature, 10.);
                 equation = equation + HeatLossCoefficient * rimHeatTransfer;
             }
 
