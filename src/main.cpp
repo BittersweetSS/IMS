@@ -21,18 +21,18 @@ public:
         Condition(target_temperature - temperature_sensor)
         {};
     void Action(){
-    cout << "Entering Thermostat::Action()" << endl;
+        cout << "Entering Thermostat::Action()" << endl;
 
-     if(Up()){
-            output = 1.0;
-            target_temperature = OFF_temperature;
-        }else{
-            output = 0.0;
-            target_temperature = ON_temperature;
-        }
-        printf("Thermostat: %-1.1f", output.Value());// ... rest of the code ...
+        if(Up()){
+                output = 1.0;
+                target_temperature = ON_temperature;
+            }else{
+                output = 0.0;
+                target_temperature = OFF_temperature;
+            }
+            printf("Thermostat: %-1.1f\n", output.Value());
 
-    cout << "Exiting Thermostat::Action()" << endl;
+        cout << "Exiting Thermostat::Action()" << endl;
     }
 };
 
@@ -60,15 +60,21 @@ class Radiator : public aContiBlock {
 class cell {
 private:
     bool shouldConsumePower;
+    bool isSensor;
 
 public:
     Radiator *radiator;
     Integrator temperature;
     Input temp;
 
-    cell(Radiator* Radiator, bool consumePower, Input temp) : temp(temp), temperature(temp,0.), radiator(Radiator), shouldConsumePower(consumePower) {
-    }
-
+    cell(Radiator* Radiator, bool consumePower, bool isSensor, Input temp) : 
+    temp(temp), 
+    temperature(temp,0.), 
+    radiator(Radiator),
+    shouldConsumePower(consumePower),
+    isSensor(isSensor)
+    {}
+    
     void Out(){
         printf("%-1.1f", temperature.Value());
         if (shouldConsumePower){
@@ -113,16 +119,16 @@ void Sample(){
 }
 
 Sampler S(Sample,10);
-#define heat_transfer_equation(T1, T2) (-0.5 * ((T1) - (T2)))
+#define heat_transfer_equation(T1, T2) (-0.1 * ((T1) - (T2)))
 
 int main(int argc, char const *argv[])
 {  
     Radiator radiator(0., 0., Mass, SpecificHeatCapacity, HeatLossCoefficient);
-    //Thermostat thermostat(22.0, 18.0, room[0][7][0]->temperature);
     for (size_t x = 0, y = 0, z = 0;;)
     {
         bool consumePower = (x == 15 && y == 6 && z == 0);
-        room[x][y][z] = new cell(&radiator, consumePower,0.);
+        bool isSensor = (x == 0 && y == 7 && z == 0);
+        room[x][y][z] = new cell(&radiator, consumePower,isSensor,0.);
 
         if (++x >= X_SIZE)
             x = 0;
@@ -147,23 +153,25 @@ int main(int argc, char const *argv[])
             equation = equation + heat_transfer_equation(current->temperature, room[x][y-1][z]->temperature);
         if(y != Y_SIZE - 1)
             equation = equation + heat_transfer_equation(current->temperature, room[x][y+1][z]->temperature);
-
+        if (x == 0 || x == X_SIZE - 1 || y == 0 || y == Y_SIZE - 1) {
+                Input rimHeatTransfer = heat_transfer_equation(current->temperature, -18);
+                equation = equation + 0.0042 * rimHeatTransfer;
+            }
         if (x == 15 && y == 6 && z == 0) {
             current->radiator->heaterPower.Set(1500);
             current->radiator->outsideTemperature.Set(equation);
             current->radiator->temperature.Init(21.0);
 
-            current->temperature.SetInput(0.0042 * current->radiator->temperature.Value());
+            current->temperature.SetInput( 0.0042 * current->radiator->temperature.Value());
             current->temperature.Init(current->radiator->temperature.Value());
         } else {
+           
             current->temperature.SetInput(equation);
             current->temperature.Init(21.0 + double(x) / X_SIZE - double(y) / Y_SIZE + double(z) / Z_SIZE);
         }
-        /*
-        if (x == 0 && y == 7 && z == 0) 
-            thermostat.temperature_sensor.Set(current->temperature.Value());
-        */
+
         
+
         current->Out();
 
         if(x == X_SIZE - 1)
@@ -180,9 +188,13 @@ int main(int argc, char const *argv[])
         if (++z >= Z_SIZE)
             break;
     }
+
+    
+    
+    
    
-    //DebugON();
-    Init(0.,500);
+   // DebugON();
+    Init(0.,400);
     SetStep(1e-10,0.5);
     Run();
     return 0;
